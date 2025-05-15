@@ -42,18 +42,21 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e  # Stop on error
+
             cd /home/ubuntu/app
 
-            # Set environment variable
-            echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > .env
+            echo "✅ Current path: $(pwd)"
+            echo "✅ Contents:"
+            ls -la
 
-            # Clean PM2 process if needed (optional)
-            pm2 delete next-app || true
-
-            # Install dependencies and build app
+            echo "📦 Installing dependencies..."
             npm install --omit=dev
-            npm run build
 
-            # Start or restart the app
+            echo "⚙️ Building app..."
+            npm run build || { echo "❌ Build failed"; exit 1; }
+
+            echo "🔁 Restarting PM2..."
+            pm2 delete next-app || true
             pm2 start npm --name "next-app" -- start
             pm2 save
