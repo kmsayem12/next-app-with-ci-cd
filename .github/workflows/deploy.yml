@@ -43,7 +43,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/app
-            echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env
+            echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > .env
             npm install --omit=dev
             pm2 describe next-app > /dev/null
             if [ $? -eq 0 ]; then
