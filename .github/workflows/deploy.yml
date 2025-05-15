@@ -42,16 +42,13 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e  # Stop on error
+            set -e
 
             cd /home/ubuntu/app
 
             echo "✅ Current path: $(pwd)"
-            echo "✅ Contents:"
-            ls -la
-
             echo "📦 Installing dependencies..."
-            npm install --omit=dev
+            npm install
 
             echo "⚙️ Building app..."
             npm run build || { echo "❌ Build failed"; exit 1; }
