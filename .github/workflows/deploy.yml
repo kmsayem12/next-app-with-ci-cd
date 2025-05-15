@@ -1,35 +1,30 @@
-name: Deploy Next.js to EC2
-
+name: Deploy to EC2
 on:
   push:
     branches:
-      - main # Or your main branch name
-
+      - main
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
+      - name: Create deployment directory (if it doesn't exist)
+        uses: appleboy/ssh-action@v0.1.10 # Use ssh-action for remote commands
         with:
-          node-version: "lts/*"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build Next.js app
-        run: npm run build
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          host: ${{ secrets.EC2_INSTANCE_IP }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            mkdir -p /home/***/app  # Or your desired directory
+            chmod 755 /home/***/app #set permissions
 
       - name: Copy build files to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -37,20 +32,18 @@ jobs:
           host: ${{ secrets.EC2_INSTANCE_IP }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: .next
-          target: ~/app/ # Or your desired directory on the EC2 instance
+          source: ./.next/server # Or the directory containing your build output
+          target: /home/***/app
 
-      - name: SSH and deploy
+      - name: Deploy application
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.EC2_INSTANCE_IP }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/app
-            npm install --production # Install production dependencies
-            pm2 stop next-app || true # Stop if running
-            pm2 delete next-app || true # Delete if exists
-            npm run start:prod # Or your production start script
-            pm2 save # Save the pm2 process list
-            pm2 startup # Configure pm2 to start on boot
+            cd /home/***/app
+            npm install --omit=dev # Use --omit=dev
+            pm2 start npm --name "next-app" -- start
+            pm2 save
+            pm2 startup
