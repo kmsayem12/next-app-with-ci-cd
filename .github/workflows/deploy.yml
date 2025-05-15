@@ -13,15 +13,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Start SSH Agent and Add Key
+      - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Add known hosts
-        run: |
-          ssh-keyscan -H ec2-34-229-121-145.compute-1.amazonaws.com >> ~/.ssh/known_hosts
+      - name: Add EC2 host to known_hosts
+        run: ssh-keyscan -H ec2-34-229-121-145.compute-1.amazonaws.com >> ~/.ssh/known_hosts
 
-      - name: Deploy via rsync
-        run: |
-          rsync -avz --delete ./dist ubuntu@ec2-34-229-121-145.compute-1.amazonaws.com:/home/ubuntu/app
+      - name: Test SSH connection
+        run: ssh -v ubuntu@ec2-34-229-121-145.compute-1.amazonaws.com "echo ✅ Connected"
+
+      - name: Rsync deploy
+        run: rsync -avz --delete ./dist ubuntu@ec2-34-229-121-145.compute-1.amazonaws.com:/home/ubuntu/app
