@@ -45,6 +45,7 @@ jobs:
             cd /home/ubuntu/app
             echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}" > .env
             npm install --omit=dev
+            npm run build
             pm2 describe next-app > /dev/null
             if [ $? -eq 0 ]; then
               pm2 restart next-app
