@@ -23,8 +23,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p /home/***/app  # Or your desired directory
-            chmod 755 /home/***/app #set permissions
+            mkdir -p /home/***/app # Or your desired directory
+            chmod 755 /home/***/app # Set permissions
 
       - name: Copy build files to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -32,7 +32,7 @@ jobs:
           host: ${{ secrets.EC2_INSTANCE_IP }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: ./.next/server # Or the directory containing your build output
+          source: ./ # changed source to root of the repo
           target: /home/***/app
 
       - name: Deploy application
