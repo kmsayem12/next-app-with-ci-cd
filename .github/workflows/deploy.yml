@@ -1,0 +1,36 @@
+name: Deploy Next.js to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Rsync files to EC2
+        run: |
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ubuntu@ec2-34-229-121-145.compute-1.amazonaws.com:~/next-app
+
+      - name: Install dependencies and restart app
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@ec2-34-229-121-145.compute-1.amazonaws.com << 'EOF'
+            cd ~/next-app
+            npm install
+            npm run build
+            pm2 stop all || true
+            pm2 start npm --name "next-app" -- start
+            pm2 save
+          EOF
