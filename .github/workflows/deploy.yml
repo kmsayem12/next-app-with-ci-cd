@@ -13,7 +13,7 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf "%s" "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 400 ~/.ssh/id_rsa
 
       - name: Create deployment directory (if it doesn't exist)
@@ -23,8 +23,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p /home/***/app # Or your desired directory
-            chmod 755 /home/***/app # Set permissions
+            mkdir -p /home/ubuntu/app # Or your desired directory
+            chmod 755 /home/ubuntu/app # Set permissions
 
       - name: Copy build files to EC2
         uses: appleboy/scp-action@v0.1.4
@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ./ # changed source to root of the repo
-          target: /home/***/app
+          target: /home/ubuntu/app
 
       - name: Deploy application
         uses: appleboy/ssh-action@v0.1.10
@@ -42,9 +42,13 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/***/app
-            echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env # Set env variable.
-            npm install --omit=dev # Use --omit=dev
-            pm2 start npm --name "next-app" -- start
+            cd /home/ubuntu/app
+            echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env
+            npm install --omit=dev
+            pm2 describe next-app > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart next-app
+            else
+              pm2 start npm --name "next-app" -- start
+            fi
             pm2 save
-            pm2 startup
