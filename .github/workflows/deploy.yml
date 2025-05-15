@@ -43,6 +43,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/***/app
+            echo "NEXT_PUBLIC_API_URL=http://localhost:3000" > .env # Set env variable.
             npm install --omit=dev # Use --omit=dev
             pm2 start npm --name "next-app" -- start
             pm2 save
